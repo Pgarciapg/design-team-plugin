@@ -2,7 +2,9 @@
   "name": "claude-notifier",
   "version": "1.0.0",
   "description": "Audio notifications for Claude Code - plays sounds when Claude finishes a task or needs your attention for permission prompts",
-  "author": "Pablo Garcia Pizano",
+  "author": {
+    "name": "Pablo Garcia Pizano"
+  },
   "hooks": {
     "Stop": [
       {
