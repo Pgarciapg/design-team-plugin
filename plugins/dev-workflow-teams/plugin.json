@@ -1,0 +1,6 @@
+{
+  "name": "dev-workflow-teams",
+  "version": "1.0.0",
+  "description": "Development workflow team compositions with specialized agent task assignments",
+  "commands": "commands/"
+}
