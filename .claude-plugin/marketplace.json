@@ -76,6 +76,16 @@
       },
       "source": "./plugins/hackathon",
       "category": "development"
+    },
+    {
+      "name": "exec-assistant",
+      "description": "Autonomous executive assistant that scans your projects daily, sends Slack briefs, and runs overnight workers to fix bugs, add tests, and open PRs while you sleep",
+      "version": "1.0.0",
+      "author": {
+        "name": "Pablo Garcia Pizano"
+      },
+      "source": "./plugins/exec-assistant",
+      "category": "productivity"
     }
   ]
 }
