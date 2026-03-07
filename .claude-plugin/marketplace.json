@@ -28,36 +28,6 @@
       "category": "development"
     },
     {
-      "name": "dev-workflow-teams",
-      "description": "Development workflow team compositions with specialized agent task assignments",
-      "version": "1.0.0",
-      "author": {
-        "name": "Pablo Garcia Pizano"
-      },
-      "source": "./plugins/dev-workflow-teams",
-      "category": "development"
-    },
-    {
-      "name": "dev-toolkit",
-      "description": "Code quality lifecycle agents: debug, test, refactor, and document. Provides systematic approaches to root cause analysis, test strategy design, behavior-preserving refactoring, and technical documentation.",
-      "version": "1.0.0",
-      "author": {
-        "name": "Pablo Garcia Pizano"
-      },
-      "source": "./plugins/dev-toolkit",
-      "category": "development"
-    },
-    {
-      "name": "react-perf",
-      "description": "React and Next.js performance optimization guidelines with 40+ prioritized rules. Covers waterfall elimination, bundle optimization, server-side performance, re-render optimization, and more.",
-      "version": "1.0.0",
-      "author": {
-        "name": "Pablo Garcia Pizano"
-      },
-      "source": "./plugins/react-perf",
-      "category": "development"
-    },
-    {
       "name": "mvp-builder",
       "description": "End-to-end MVP builder for client projects using Next.js, Supabase, and Vercel. Includes kickoff, scaffolding, database management, and deployment workflows.",
       "version": "1.0.0",
