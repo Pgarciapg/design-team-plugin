@@ -1,4 +1,5 @@
 ---
+name: nextjs-supabase-stack
 description: Next.js + Supabase + Vercel MVP stack best practices and patterns
 globs:
   - "**/*.ts"
@@ -8,271 +9,68 @@ globs:
 
 # Next.js + Supabase MVP Stack
 
-Best practices for building MVPs with Next.js, Supabase, and Vercel.
+Non-obvious patterns and gotchas for building MVPs with Next.js, Supabase, and Vercel.
+
+**Reference templates:** See `references/` folder for copy-paste Supabase client setup and middleware templates.
 
 ## Project Structure
 
 ```
 src/
 ├── app/                    # Next.js App Router
-│   ├── (auth)/            # Auth route group (no layout)
-│   │   ├── login/
-│   │   └── signup/
+│   ├── (auth)/            # Auth route group
 │   ├── (dashboard)/       # Protected route group
-│   │   ├── layout.tsx     # Shared dashboard layout
-│   │   └── dashboard/
-│   ├── api/               # API routes
-│   ├── layout.tsx         # Root layout
-│   └── page.tsx           # Home page
+│   └── api/               # API routes
 ├── components/
-│   ├── ui/                # Reusable UI components
-│   └── [feature]/         # Feature-specific components
+│   ├── ui/                # shadcn/ui components
+│   └── [feature]/         # Feature-specific
 ├── lib/
-│   ├── supabase/          # Supabase clients
-│   └── utils.ts           # Utility functions
-├── hooks/                 # Custom React hooks
-├── types/                 # TypeScript types
-│   └── database.ts        # Supabase generated types
-└── middleware.ts          # Auth middleware
+│   └── supabase/          # Server + browser clients (see references/)
+├── types/
+│   └── database.ts        # Generated: npx supabase gen types typescript
+└── middleware.ts           # Session refresh (see references/)
 ```
 
-## Data Fetching Patterns
+## Critical Setup Steps
 
-### Server Components (Preferred)
+1. **Supabase client**: Use `@supabase/ssr` (NOT `@supabase/auth-helpers-nextjs` — deprecated). See `references/supabase-client-setup.ts`.
+2. **Middleware**: MUST call `supabase.auth.getUser()` to refresh session. Without this, auth silently breaks after token expiry. See `references/middleware-template.ts`.
+3. **Type generation**: `npx supabase gen types typescript --project-id YOUR_PROJECT_ID > src/types/database.ts` — run after every migration.
+4. **RLS policies**: Enable on EVERY table before going to production. Test with anon key to verify.
+
+## Auth Patterns
+
+### Protected pages
 ```typescript
-// Runs on server, no client JS shipped
-export default async function Page() {
-  const supabase = await createClient();
-  const { data } = await supabase.from("items").select();
-  return <ItemList items={data} />;
-}
-```
-
-### Server Actions (Mutations)
-```typescript
-"use server";
-
-export async function createItem(formData: FormData) {
-  const supabase = await createClient();
-  await supabase.from("items").insert({
-    title: formData.get("title"),
-  });
-  revalidatePath("/items");
-}
-```
-
-### Client Components (Interactive)
-```typescript
-"use client";
-// Only when you need:
-// - Event handlers
-// - useState/useEffect
-// - Browser APIs
-// - Real-time subscriptions
-```
-
-## Authentication Flow
-
-### Middleware (Session Refresh)
-```typescript
-// src/middleware.ts
-export async function middleware(request: NextRequest) {
-  return await updateSession(request);
-}
-```
-
-### Protected Routes
-```typescript
-// In page or layout
 const { data: { user } } = await supabase.auth.getUser();
 if (!user) redirect("/login");
 ```
+Use `getUser()` not `getSession()` — `getSession()` reads from cookie without server validation.
 
-### Login Form
+### After login, call `router.refresh()`
 ```typescript
-const { error } = await supabase.auth.signInWithPassword({
-  email,
-  password,
-});
-if (error) throw error;
 router.push("/dashboard");
-router.refresh(); // Important: refresh server components
+router.refresh(); // Force Server Components to re-render with new auth state
 ```
 
-## Component Patterns
+## Gotchas
 
-### Form with Server Action
-```typescript
-<form action={serverAction}>
-  <input name="field" />
-  <SubmitButton />
-</form>
-
-// SubmitButton.tsx
-"use client";
-import { useFormStatus } from "react-dom";
-
-function SubmitButton() {
-  const { pending } = useFormStatus();
-  return <button disabled={pending}>
-    {pending ? "Saving..." : "Save"}
-  </button>;
-}
-```
-
-### Optimistic Updates
-```typescript
-"use client";
-import { useOptimistic } from "react";
-
-function ItemList({ items }) {
-  const [optimisticItems, addOptimistic] = useOptimistic(
-    items,
-    (state, newItem) => [...state, newItem]
-  );
-
-  async function handleAdd(formData) {
-    addOptimistic({ id: "temp", title: formData.get("title") });
-    await createItem(formData);
-  }
-
-  return /* ... */;
-}
-```
-
-## Styling Guidelines
-
-### Tailwind Best Practices
-```typescript
-// Use cn() for conditional classes
-import { cn } from "@/lib/utils";
-
-<button className={cn(
-  "px-4 py-2 rounded",
-  variant === "primary" && "bg-zinc-900 text-white",
-  variant === "secondary" && "bg-zinc-100",
-  disabled && "opacity-50 cursor-not-allowed"
-)} />
-```
-
-### Responsive Design
-```typescript
-// Mobile-first approach
-<div className="
-  p-4          // Base (mobile)
-  md:p-6       // Medium screens
-  lg:p-8       // Large screens
-">
-```
-
-## Error Handling
-
-### API Routes
-```typescript
-export async function POST(request: Request) {
-  try {
-    // ... logic
-    return Response.json({ success: true });
-  } catch (error) {
-    console.error(error);
-    return Response.json(
-      { error: "Something went wrong" },
-      { status: 500 }
-    );
-  }
-}
-```
-
-### Server Actions
-```typescript
-"use server";
-
-export async function createItem(formData: FormData) {
-  const supabase = await createClient();
-
-  const { error } = await supabase
-    .from("items")
-    .insert({ title: formData.get("title") });
-
-  if (error) {
-    return { error: error.message };
-  }
-
-  revalidatePath("/items");
-  return { success: true };
-}
-```
-
-### Error Boundaries
-```typescript
-// app/items/error.tsx
-"use client";
-
-export default function Error({
-  error,
-  reset,
-}: {
-  error: Error;
-  reset: () => void;
-}) {
-  return (
-    <div className="p-4 bg-red-50 rounded">
-      <h2>Something went wrong</h2>
-      <button onClick={reset}>Try again</button>
-    </div>
-  );
-}
-```
-
-## Performance Tips
-
-### Image Optimization
-```typescript
-import Image from "next/image";
-
-<Image
-  src="/hero.jpg"
-  alt="Hero"
-  width={1200}
-  height={600}
-  priority // For above-the-fold images
-/>
-```
-
-### Dynamic Imports
-```typescript
-import dynamic from "next/dynamic";
-
-const HeavyComponent = dynamic(
-  () => import("./HeavyComponent"),
-  { loading: () => <Skeleton /> }
-);
-```
-
-### Caching
-```typescript
-// Revalidate every hour
-export const revalidate = 3600;
-
-// Or on-demand
-import { revalidatePath, revalidateTag } from "next/cache";
-revalidatePath("/items");
-```
+- **`.local` TLD emails are rejected** by Supabase cloud auth signup — use `.com` or `.test` emails for testing.
+- **Auto-confirm users** in dev: signup via anon key, then `PUT /auth/v1/admin/users/{id}` with `{"email_confirm":true}` using service role key.
+- **`supabase db push` uses linked project** automatically — do NOT pass `--project-ref` flag (it doesn't exist).
+- **`@supabase/auth-helpers-nextjs` is deprecated** — use `@supabase/ssr` instead. Many tutorials still reference the old package.
+- **Middleware must call `getUser()`** — if you only call `getSession()`, tokens expire silently and users get logged out randomly.
+- **`cookies()` is async in Next.js 16** — use `await cookies()` in the Supabase server client.
+- **RLS + service role key bypasses all policies** — never expose service role key to the browser (no `NEXT_PUBLIC_` prefix).
+- **Supabase local dev requires Docker/OrbStack running** — only one instance at a time on default ports (54321/54322).
+- **For multiple local projects**, configure port offsets in `supabase/config.toml`.
+- **Schema SQL files must order tables by FK dependencies** — create referenced tables first.
+- **Real-time subscriptions in Server Components don't work** — use a Client Component wrapper with `useEffect`.
 
 ## Security Checklist
 
-- [ ] RLS enabled on all Supabase tables
-- [ ] Environment variables not exposed to client (no NEXT_PUBLIC_ for secrets)
-- [ ] Input validation on server actions
-- [ ] Rate limiting on auth endpoints
-- [ ] CSRF protection (built into Server Actions)
-- [ ] Proper error messages (don't leak internal info)
-
-## Deployment Checklist
-
-- [ ] Environment variables set in Vercel
-- [ ] Supabase URL Configuration updated with production domain
-- [ ] Database migrations pushed
-- [ ] Types regenerated
-- [ ] Build passes locally
-- [ ] Auth redirects work
+- [ ] RLS enabled on ALL Supabase tables
+- [ ] Service role key NOT exposed to client
+- [ ] `getUser()` used instead of `getSession()` for auth checks
+- [ ] Input validation on Server Actions
+- [ ] `.env*.local` in `.gitignore`

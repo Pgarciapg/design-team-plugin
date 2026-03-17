@@ -3,55 +3,45 @@ name: vercel-design-guidelines
 description: Check web interfaces against Vercel's design guidelines. Use when asked to "review my UI", "check accessibility", "audit design", "review UX", "check my site against best practices", or "apply Vercel design guidelines".
 ---
 
-# Vercel Design Guidelines
+# Vercel Design Guidelines Audit
 
-Review web interfaces against Vercel's comprehensive design guidelines and propose fixes.
+Review web interfaces against Vercel's design guidelines and propose fixes.
 
-## How It Works
+**Key rules snapshot:** See `references/key-guidelines.md` in this skill folder for the most important non-obvious rules.
 
-1. Read the user's code (components, CSS, HTML)
-2. Check against Vercel design guidelines (interactions, animations, layout, content, forms, performance, design, copywriting)
-3. Report violations with specific line references
-4. Propose concrete fixes with code examples
+For the latest guidelines, fetch from: https://vercel.com/design/guidelines
 
-## Usage
+## How To Audit
 
-When a user asks to review their UI or check against design guidelines:
-
-1. Fetch the live guidelines from `https://vercel.com/design/guidelines`
-2. Read the relevant source files (components, styles, HTML)
-3. Analyze the code against each applicable guideline category
+1. Read the relevant source files (components, styles, HTML)
+2. Check against the key guidelines in `references/key-guidelines.md`
+3. Optionally fetch live guidelines for completeness
 4. Report findings grouped by category with severity
 
-**Guidelines URL:** https://vercel.com/design/guidelines
+## Quick Checklist (High-Impact Items)
 
-Always fetch fresh guidelines to ensure you're checking against the latest standards.
-
-## Audit Categories
-
-- **Interactions**: Keyboard accessibility, focus management, hit targets, loading states, URL persistence
-- **Animations**: Reduced motion, GPU acceleration, easing, interruptibility
-- **Layout**: Optical adjustment, alignment, responsive testing, safe areas
-- **Content**: Inline help, skeletons, empty states, typography, accessibility
-- **Forms**: Labels, validation, autocomplete, error handling, submit behavior
-- **Performance**: Re-renders, layout thrashing, virtualization, preloading
-- **Design**: Shadows, borders, radii, contrast, color accessibility
-- **Copywriting**: Active voice, title case, clarity, error messaging
+- [ ] All interactive elements keyboard accessible
+- [ ] Visible focus rings on focusable elements
+- [ ] Hit targets ≥24px (44px on mobile)
+- [ ] Form inputs have visible labels (not just placeholder)
+- [ ] Loading states don't flicker (150ms delay + 300ms minimum)
+- [ ] `prefers-reduced-motion` respected
+- [ ] No `transition: all` — specify properties
+- [ ] Errors explain how to fix, not just what's wrong
+- [ ] APCA contrast (not just WCAG 2.x)
+- [ ] No zoom disabled (`maximum-scale=1` or `user-scalable=no`)
 
 ## Output Format
-
-Present findings as:
 
 ```
 ## {Category} Issues
 
 ### {Severity}: {Guideline Name}
 **File:** `path/to/file.tsx:42`
-**Issue:** {Description of the violation}
-**Guideline:** {Brief guideline reference}
+**Issue:** {Description}
 **Fix:**
-```{language}
-{Proposed code fix}
+```tsx
+{code fix}
 ```
 ```
 
@@ -60,80 +50,10 @@ Severity levels:
 - **Warning**: UX issues, performance concerns
 - **Suggestion**: Polish, best practices
 
-## Example Review
+## Gotchas
 
-```
-## Interactions Issues
-
-### Critical: Keyboard Accessibility
-**File:** `components/Modal.tsx:28`
-**Issue:** Modal lacks focus trap - keyboard users can tab outside
-**Guideline:** Implement focus traps per WAI-ARIA patterns
-**Fix:**
-```tsx
-// Add focus trap using @radix-ui/react-focus-guards or similar
-import { FocusScope } from '@radix-ui/react-focus-scope';
-
-<FocusScope trapped>
-  <ModalContent>{children}</ModalContent>
-</FocusScope>
-```
-
-### Warning: Loading State Duration
-**File:** `components/Button.tsx:15`
-**Issue:** No minimum loading duration - causes flicker on fast responses
-**Guideline:** Add 150-300ms delay and 300-500ms minimum visibility
-**Fix:**
-```tsx
-const [isLoading, setIsLoading] = useState(false);
-const minimumLoadingTime = 300;
-
-async function handleClick() {
-  setIsLoading(true);
-  const start = Date.now();
-  await action();
-  const elapsed = Date.now() - start;
-  if (elapsed < minimumLoadingTime) {
-    await new Promise(r => setTimeout(r, minimumLoadingTime - elapsed));
-  }
-  setIsLoading(false);
-}
-```
-```
-
-## Quick Checklist
-
-For rapid reviews, check these high-impact items first:
-
-- [ ] All interactive elements keyboard accessible
-- [ ] Visible focus rings on focusable elements
-- [ ] Hit targets ≥24px (44px on mobile)
-- [ ] Form inputs have associated labels
-- [ ] Loading states don't flicker
-- [ ] `prefers-reduced-motion` respected
-- [ ] No `transition: all`
-- [ ] Errors show how to fix, not just what's wrong
-- [ ] Color contrast meets APCA standards
-- [ ] No zoom disabled
-
-## Present Results to User
-
-After reviewing:
-
-```
-# Design Guidelines Audit
-
-Reviewed {N} files against Vercel design guidelines.
-
-## Summary
-- Critical: {N} issues
-- Warning: {N} issues
-- Suggestions: {N} items
-
-{Detailed findings by category}
-
-## Recommended Priority
-1. {First critical fix}
-2. {Second critical fix}
-...
-```
+- **`outline: none` without replacement** is the most common accessibility violation — always provide a visible focus indicator.
+- **Placeholder-only inputs** fail accessibility audits even if they look fine visually — screen readers skip placeholders.
+- **`transition: all`** causes jank on complex components — always enumerate: `transition-property: color, background-color, transform`.
+- **APCA vs WCAG**: Vercel uses APCA for contrast. A WCAG-passing 4.5:1 ratio can still fail APCA for small text. Use an APCA calculator.
+- **Loading spinners appearing instantly** feel jarring — add a 150-300ms delay before showing any loading indicator.

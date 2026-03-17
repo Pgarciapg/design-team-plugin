@@ -1,30 +1,29 @@
 ---
 name: mobile-polish
-description: Ensure all UI specs include responsive layout rules that work well across mobile, tablet, and desktop breakpoints.
+description: Use when generating UI components, page layouts, or reviewing responsive design to ensure balanced mobile/tablet/desktop behavior.
 ---
 
-Whenever producing UI or page specs, ensure **balanced responsive design** that works well at all screen sizes:
+Ensure **balanced responsive design** across all screen sizes when producing UI specs.
 
-## Breakpoint Strategy
-- Mobile: 375px–640px (single column, stacked layouts)
-- Tablet: 641px–1024px (2-column grids, side-by-side content)
-- Desktop: 1025px+ (full multi-column layouts, expanded navigation)
+## Breakpoint Strategy (Tailwind)
+- `sm:` (640px+) — Single → two-column transition
+- `md:` (768px+) — Tablet, side-by-side content
+- `lg:` (1024px+) — Full multi-column, expanded nav
+- `xl:` (1280px+) — Wide desktop, max-width containers
 
-## Layout Rules
-- Use fluid grids that adapt gracefully—avoid forcing mobile patterns onto desktop.
-- On desktop (1025px+): utilize horizontal space with multi-column layouts, sidebars, and expanded content areas.
-- On tablet: transition layouts gradually—don't collapse everything to single column prematurely.
-- On mobile: single column with appropriate stacking.
-
-## Touch & Interaction
-- Minimum touch target 44x44 on mobile.
-- On desktop: standard clickable areas (no need to bloat buttons for touch).
-- Navigation: collapse to hamburger only below 768px; keep expanded nav visible on desktop/tablet.
-
-## Typography & Spacing
-- Scale typography appropriately per breakpoint—mobile text can be slightly smaller, desktop text should breathe.
-- Avoid cramped line-height on any device.
-- Spacing should feel generous on desktop; tighter but not cramped on mobile.
+## Non-Obvious Rules
+- Collapse to hamburger only below `md:` — keep expanded nav visible on tablet+
+- Touch targets: 44x44 on mobile, standard on desktop — don't bloat desktop buttons
+- Don't force `max-w-sm` on desktop cards — let them breathe with the layout
+- Use `gap-*` over manual margin for grid/flex — handles responsive spacing better
 
 ## Key Principle
-**Don't sacrifice desktop aesthetics for mobile optimization.** The goal is a great experience on ALL devices, not just mobile.
+**Don't sacrifice desktop aesthetics for mobile optimization.** A great experience on ALL devices, not just mobile.
+
+## Gotchas
+- **Tailwind is mobile-first (`min-width`)** — if you write `hidden sm:block`, it's hidden on mobile, shown on 640px+. Don't confuse with `max-width` media queries.
+- **`transition: all` kills performance** — always specify properties: `transition-colors`, `transition-transform`.
+- **Forgetting `safe-area-inset`** on iOS — bottom nav bars get covered by the home indicator. Use `pb-safe` or `env(safe-area-inset-bottom)`.
+- **Testing only at exact breakpoints** — test at 375px (iPhone SE), 390px (iPhone 15), 768px (iPad), and 1440px (desktop).
+- **Stacking order on mobile** — visually important content should come first in the DOM (for screen readers too). Don't rely on CSS `order` for semantic flow.
+- **Images without `aspect-ratio`** cause layout shift on mobile — always set explicit dimensions or `aspect-ratio`.
