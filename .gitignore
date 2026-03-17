@@ -1,0 +1,4 @@
+# Plugin data files (generated at runtime)
+**/data/*.jsonl
+**/data/*.json
+!**/data/.gitkeep
