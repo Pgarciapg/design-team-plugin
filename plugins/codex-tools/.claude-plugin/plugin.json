@@ -1,0 +1,8 @@
+{
+  "name": "codex-tools",
+  "description": "OpenAI Codex integration tools for plan review and PR review",
+  "version": "1.0.0",
+  "author": {
+    "name": "Pablo Garcia Pizano"
+  }
+}

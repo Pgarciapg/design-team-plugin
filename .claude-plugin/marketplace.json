@@ -56,6 +56,16 @@
       },
       "source": "./plugins/exec-assistant",
       "category": "productivity"
+    },
+    {
+      "name": "codex-tools",
+      "description": "OpenAI Codex integration for PR review and implementation plan review from within Claude Code",
+      "version": "1.0.0",
+      "author": {
+        "name": "Pablo Garcia Pizano"
+      },
+      "source": "./plugins/codex-tools",
+      "category": "development"
     }
   ]
 }
