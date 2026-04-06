@@ -29,24 +29,38 @@ Ask the user these questions ONE AT A TIME using the AskUserQuestion tool:
 
 ### 3. User Authentication
 Options:
-- Email/password only
-- Social login (Google, GitHub, etc.)
-- Magic link / passwordless
+- Supabase Auth (email/password, magic link, social login) — default, fastest
+- Clerk (polished UI, org management, Vercel Marketplace native) — best for multi-tenant SaaS
 - No auth needed
 
 ### 4. Data Requirements
 "What data needs to be stored? (users, products, orders, content, etc.)"
 
 ### 5. Third-party Integrations
-"Any external services needed? (payments, email, analytics, etc.)"
+"Any external services needed?"
+Common ones:
+- Payments (Stripe — keys already available at ~/.env-keys/)
+- Email (Resend)
+- AI features (AI SDK + AI Gateway — no API keys needed on Vercel)
+- Analytics (Vercel Analytics — zero-config)
+- File uploads (Vercel Blob or Supabase Storage)
 
 ### 6. Design Direction
 Options:
-- Minimal / Clean (fastest to build)
-- Modern / Polished (balanced)
-- Custom branded (provide brand guidelines)
+- Minimal / Clean (shadcn/ui defaults, fastest to build)
+- Modern / Polished (shadcn/ui + Tremor charts + Motion animations + Phosphor icons)
+- Design-first (prototype in Google Stitch first, then implement)
+- Custom branded (provide brand guidelines or live site URL for palette extraction)
 
-### 7. Timeline Priority
+### 7. AI Features
+"Does the MVP need any AI capabilities?"
+Options:
+- None
+- Chat / conversational UI (AI SDK + AI Gateway + AI Elements)
+- Content generation (structured output, summaries, etc.)
+- Image generation (AI Gateway + Gemini 3.1 Flash Image Preview)
+
+### 8. Timeline Priority
 Options:
 - Speed (ship in days, iterate later)
 - Balance (solid foundation, reasonable timeline)
@@ -78,10 +92,12 @@ After gathering all requirements, create a PROJECT_BRIEF.md file in the current 
 ...
 
 ## Tech Stack
-- **Framework**: Next.js 14+ (App Router)
-- **Database**: Supabase (PostgreSQL)
-- **Auth**: Supabase Auth
-- **Styling**: Tailwind CSS
+- **Framework**: Next.js 16 (App Router, Turbopack, proxy.ts)
+- **Database**: Supabase (PostgreSQL + Auth + Storage)
+- **Styling**: Tailwind CSS v4 + shadcn/ui
+- **Extended UI**: Tremor (charts), Motion (animations), Phosphor Icons
+- **Auth**: [Supabase Auth / Clerk]
+- **AI**: [AI SDK v6 + AI Gateway / None]
 - **Hosting**: Vercel
 - **Additional**: [any integrations]
 
@@ -91,6 +107,10 @@ After gathering all requirements, create a PROJECT_BRIEF.md file in the current 
 ## Authentication
 - Type: [chosen auth type]
 - Providers: [if social login]
+
+## AI Integration
+- [Describe AI features if any]
+- Model: [e.g., anthropic/claude-sonnet-4.6 via AI Gateway]
 
 ## Third-party Services
 - [Service 1]: [purpose]
@@ -109,7 +129,7 @@ After gathering all requirements, create a PROJECT_BRIEF.md file in the current 
 ## Next Steps
 1. Run `/mvp-scaffold` to generate project structure
 2. Set up Supabase project
-3. Configure Vercel deployment
+3. Configure Vercel deployment (`vercel link` + `vercel env pull`)
 4. Begin feature development
 ```
 
@@ -119,9 +139,10 @@ After creating the brief, provide:
 
 1. **Estimated complexity**: Simple / Medium / Complex
 2. **Suggested project structure** based on features
-3. **Supabase tables** needed (high-level)
+3. **Supabase tables** needed (high-level, ordered by FK dependencies)
 4. **Recommended order** for building features
 5. **Potential risks** or technical challenges
+6. **API keys available** at ~/.env-keys/ that are relevant to this project
 
 ## Important Notes
 
@@ -129,5 +150,7 @@ After creating the brief, provide:
 - Default to built-in Supabase features over custom solutions
 - Prioritize features that validate the core hypothesis
 - Suggest what can be manual/admin-only in v1
+- Default to AI Gateway for any AI features (no API keys needed on Vercel via OIDC)
+- Recommend shadcn/ui for UI components — never build raw HTML controls
 
 When complete, remind the user they can run `/mvp-scaffold $ARGUMENTS.project_name` to generate the project.

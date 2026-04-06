@@ -36,6 +36,8 @@ npx supabase link --project-ref YOUR_PROJECT_REF
 
 Guide user to find project ref in Supabase dashboard URL.
 
+**Note**: `supabase db push` uses the linked project automatically — do NOT pass `--project-ref` flag (it doesn't exist on db push).
+
 ---
 
 ## Action: migrate
@@ -47,6 +49,10 @@ Create and run database migrations.
 Ask user: "What do you need to add to the database?"
 
 Based on response, generate appropriate SQL migration.
+
+### CRITICAL: Table Ordering
+
+Schema SQL files MUST order tables by FK dependencies — create referenced tables first. If table B has a foreign key to table A, table A's CREATE must come before table B's.
 
 ### Common Patterns:
 
@@ -100,6 +106,9 @@ create table public.[table_name] (
   updated_at timestamptz default now() not null
 );
 
+-- Index for user queries (always add for user-owned data)
+create index [table_name]_user_id_idx on public.[table_name](user_id);
+
 -- Enable RLS
 alter table public.[table_name] enable row level security;
 
@@ -121,9 +130,42 @@ create policy "Users can delete own [table_name]"
   using (auth.uid() = user_id);
 
 -- Updated at trigger
+create extension if not exists moddatetime;
 create trigger handle_updated_at before update on public.[table_name]
   for each row execute procedure moddatetime (updated_at);
 ```
+
+#### Multi-tenant (Team-based) Table
+```sql
+create table public.teams (
+  id uuid default gen_random_uuid() primary key,
+  name text not null,
+  created_at timestamptz default now() not null
+);
+
+create table public.team_members (
+  team_id uuid references public.teams on delete cascade,
+  user_id uuid references auth.users on delete cascade,
+  role text default 'member' check (role in ('owner', 'admin', 'member')),
+  joined_at timestamptz default now() not null,
+  primary key (team_id, user_id)
+);
+
+-- RLS: team members can view their team's data
+alter table public.teams enable row level security;
+alter table public.team_members enable row level security;
+
+create policy "Team members can view team"
+  on public.teams for select
+  using (
+    exists (
+      select 1 from public.team_members
+      where team_id = teams.id and user_id = auth.uid()
+    )
+  );
+```
+
+**Multi-tenant gotcha**: Schema changes must be backward-compatible. If adding org_id or team_id to existing tables, make the column nullable first, backfill, then add NOT NULL constraint in a separate migration.
 
 ### Create Migration File:
 ```bash
@@ -136,6 +178,13 @@ Then write SQL to the generated file.
 ```bash
 npx supabase db push
 ```
+
+### Cherry-Pick Safety Check
+
+Before cherry-picking migrations from feature branches:
+1. Grep the diff for `from('table_name')`, `.from(`, `org_id`, and schema references
+2. If it references tables that only exist on the feature branch, DO NOT cherry-pick
+3. Missing tables cause cascading `PGRST205` errors in production
 
 ---
 
@@ -151,16 +200,20 @@ Then show user how to use typed client:
 
 ```typescript
 import { createClient } from "@/lib/supabase/client";
-import { Database } from "@/types/database";
+import type { Database } from "@/types/database";
 
-const supabase = createClient<Database>();
+type Item = Database["public"]["Tables"]["items"]["Row"];
+
+const supabase = createClient();
 
 // Now fully typed!
 const { data } = await supabase
-  .from("profiles")
+  .from("items")
   .select("*")
-  .single();
+  .returns<Item[]>();
 ```
+
+**Always regenerate types after every migration** — stale types cause silent runtime errors.
 
 ---
 
@@ -182,6 +235,8 @@ Create `supabase/seed.sql`:
 
 Ask user what seed data they need and generate appropriate SQL.
 
+**Note**: `.local` TLD emails are rejected by Supabase cloud auth signup — use `.com` or `.test` emails in seed data.
+
 ### Run seed:
 ```bash
 npx supabase db reset
@@ -194,7 +249,7 @@ npx supabase db reset
 
 Reset database to clean state.
 
-⚠️ WARNING: This will delete all data!
+WARNING: This will delete all data!
 
 Ask for confirmation before proceeding.
 
@@ -207,15 +262,17 @@ This will:
 2. Run all migrations
 3. Run seed.sql
 
+**Note**: Supabase local dev requires Docker/OrbStack running. Only one instance at a time on default ports (54321/54322). For multiple local projects, configure port offsets in `supabase/config.toml`.
+
 ---
 
 ## Quick Reference
 
 | Command | Description |
 |---------|-------------|
-| `npx supabase start` | Start local Supabase |
+| `npx supabase start` | Start local Supabase (needs Docker) |
 | `npx supabase stop` | Stop local Supabase |
-| `npx supabase db push` | Push migrations to remote |
+| `npx supabase db push` | Push migrations to remote (uses linked project) |
 | `npx supabase db pull` | Pull schema from remote |
 | `npx supabase db reset` | Reset local database |
 | `npx supabase gen types typescript --linked` | Generate types |
@@ -226,5 +283,9 @@ This will:
 2. **Use UUIDs** - Default to UUID primary keys
 3. **Add timestamps** - Include created_at and updated_at
 4. **Foreign keys** - Reference auth.users for user ownership
-5. **Policies first** - Write RLS policies before any data access code
-6. **Type safety** - Regenerate types after schema changes
+5. **Add indexes** - Always index user_id and frequently filtered columns
+6. **Policies first** - Write RLS policies before any data access code
+7. **Type safety** - Regenerate types after every schema change
+8. **FK ordering** - Schema SQL must create referenced tables before referencing tables
+9. **One change per migration** - Easier to debug and rollback
+10. **Test locally first** - Use `supabase db reset` before pushing to remote

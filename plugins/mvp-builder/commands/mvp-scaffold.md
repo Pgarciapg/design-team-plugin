@@ -1,5 +1,5 @@
 ---
-description: Scaffold a new Next.js + Supabase MVP project with best practices baked in
+description: Scaffold a new Next.js 16 + Supabase MVP project with best practices baked in
 arguments:
   - name: project_name
     description: Name of the project (used for folder name)
@@ -11,7 +11,7 @@ arguments:
 
 # MVP Scaffold
 
-You are scaffolding a new MVP project with the standard tech stack.
+You are scaffolding a new MVP project with the standard tech stack (Next.js 16 + Supabase + Tailwind v4).
 
 ## Project: $ARGUMENTS.project_name
 
@@ -35,8 +35,24 @@ Wait for completion before proceeding.
 
 ## Step 2: Install Dependencies
 
+Core:
 ```bash
-cd $ARGUMENTS.project_name && npm install @supabase/supabase-js @supabase/ssr lucide-react clsx tailwind-merge
+cd $ARGUMENTS.project_name && npm install @supabase/supabase-js @supabase/ssr clsx tailwind-merge
+```
+
+Extended UI toolkit (always include):
+```bash
+npm install @tremor/react motion @phosphor-icons/react
+```
+
+shadcn/ui setup:
+```bash
+npx shadcn@latest init -d
+```
+
+Then add essential shadcn components:
+```bash
+npx shadcn@latest add button input card table badge dialog sheet alert-dialog dropdown-menu tabs separator skeleton toast
 ```
 
 Dev dependencies:
@@ -44,7 +60,19 @@ Dev dependencies:
 npm install -D @types/node prettier prettier-plugin-tailwindcss
 ```
 
-## Step 3: Create Project Structure
+## Step 3: Tailwind v4 Light-Mode Fix
+
+Since macOS is in dark mode, Tailwind v4 will activate dark utilities via `prefers-color-scheme`. For light-mode-only projects, add this to `src/app/globals.css` BEFORE any other directives:
+
+```css
+@custom-variant dark (&:is(.dark *));
+```
+
+This prevents dark mode from activating unless explicitly toggled with a `.dark` class on `<html>`.
+
+**IMPORTANT**: Any `@import url(...)` statements (Google Fonts, etc.) MUST come BEFORE `@tailwind` directives. CSS import order matters.
+
+## Step 4: Create Project Structure
 
 Create these directories:
 ```
@@ -58,7 +86,7 @@ src/
 │   ├── api/
 │   └── globals.css
 ├── components/
-│   ├── ui/
+│   ├── ui/          (populated by shadcn)
 │   └── layout/
 ├── lib/
 │   ├── supabase/
@@ -69,10 +97,10 @@ src/
 ├── hooks/
 ├── types/
 │   └── database.ts
-└── middleware.ts
+└── proxy.ts          (Next.js 16 — NOT middleware.ts)
 ```
 
-## Step 4: Create Core Files
+## Step 5: Create Core Files
 
 ### lib/utils.ts
 ```typescript
@@ -161,6 +189,8 @@ export async function updateSession(request: NextRequest) {
     }
   );
 
+  // MUST call getUser() — refreshes the session token.
+  // Using getSession() instead will cause silent auth failures after token expiry.
   const {
     data: { user },
   } = await supabase.auth.getUser();
@@ -176,7 +206,7 @@ export async function updateSession(request: NextRequest) {
 }
 ```
 
-### src/middleware.ts
+### src/proxy.ts (Next.js 16 — replaces middleware.ts)
 ```typescript
 import { type NextRequest } from "next/server";
 import { updateSession } from "@/lib/supabase/middleware";
@@ -192,6 +222,8 @@ export const config = {
 };
 ```
 
+**IMPORTANT**: Place `proxy.ts` at `src/proxy.ts` (same level as `app/`) when using `--src-dir`. This is the Next.js 16 replacement for `middleware.ts`. It runs on Node.js runtime (not Edge), so you get full Node.js API access.
+
 ### types/database.ts
 ```typescript
 export type Json =
@@ -202,7 +234,7 @@ export type Json =
   | { [key: string]: Json | undefined }
   | Json[];
 
-// Generate with: npx supabase gen types typescript --project-id YOUR_PROJECT_ID > src/types/database.ts
+// Generate with: npx supabase gen types typescript --linked > src/types/database.ts
 export interface Database {
   public: {
     Tables: {
@@ -217,8 +249,12 @@ export interface Database {
 
 ### .env.local.example
 ```
+# Supabase
 NEXT_PUBLIC_SUPABASE_URL=your-project-url
 NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key
+
+# Site URL (set to production domain when deploying)
+NEXT_PUBLIC_SITE_URL=http://localhost:3000
 ```
 
 ### .prettierrc
@@ -232,74 +268,16 @@ NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key
 }
 ```
 
-## Step 5: Create Basic UI Components
+## Step 6: Set Up Environment Variables
 
-### components/ui/button.tsx
-```typescript
-import { cn } from "@/lib/utils";
-import { ButtonHTMLAttributes, forwardRef } from "react";
+Check `~/.env-keys/` for any keys relevant to the project brief:
+- If Stripe is needed: read STRIPE_SECRET_KEY and STRIPE_PUBLISHABLE_KEY from ~/.env-keys/
+- If AI is needed: skip — AI Gateway uses OIDC (auto-provisioned by `vercel env pull`)
+- If other keys are needed: check ~/.env-keys/ first before asking the user
 
-interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
-  variant?: "primary" | "secondary" | "ghost" | "danger";
-  size?: "sm" | "md" | "lg";
-}
+Create `.env.local` with Supabase credentials (ask user) and any keys found in ~/.env-keys/.
 
-const Button = forwardRef<HTMLButtonElement, ButtonProps>(
-  ({ className, variant = "primary", size = "md", ...props }, ref) => {
-    return (
-      <button
-        ref={ref}
-        className={cn(
-          "inline-flex items-center justify-center rounded-lg font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50",
-          {
-            "bg-zinc-900 text-white hover:bg-zinc-800": variant === "primary",
-            "bg-zinc-100 text-zinc-900 hover:bg-zinc-200": variant === "secondary",
-            "hover:bg-zinc-100": variant === "ghost",
-            "bg-red-600 text-white hover:bg-red-700": variant === "danger",
-          },
-          {
-            "h-8 px-3 text-sm": size === "sm",
-            "h-10 px-4 text-sm": size === "md",
-            "h-12 px-6 text-base": size === "lg",
-          },
-          className
-        )}
-        {...props}
-      />
-    );
-  }
-);
-Button.displayName = "Button";
-
-export { Button };
-```
-
-### components/ui/input.tsx
-```typescript
-import { cn } from "@/lib/utils";
-import { InputHTMLAttributes, forwardRef } from "react";
-
-const Input = forwardRef<HTMLInputElement, InputHTMLAttributes<HTMLInputElement>>(
-  ({ className, type, ...props }, ref) => {
-    return (
-      <input
-        type={type}
-        className={cn(
-          "flex h-10 w-full rounded-lg border border-zinc-200 bg-white px-3 py-2 text-sm ring-offset-white file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-zinc-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-zinc-950 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50",
-          className
-        )}
-        ref={ref}
-        {...props}
-      />
-    );
-  }
-);
-Input.displayName = "Input";
-
-export { Input };
-```
-
-## Step 6: Create Auth Pages
+## Step 7: Create Auth Pages
 
 ### app/(auth)/login/page.tsx
 ```typescript
@@ -355,7 +333,7 @@ export function LoginForm() {
     }
 
     router.push("/dashboard");
-    router.refresh();
+    router.refresh(); // Force Server Components to re-render with new auth state
   };
 
   return (
@@ -387,7 +365,7 @@ export function LoginForm() {
 }
 ```
 
-## Step 7: Create Dashboard Layout
+## Step 8: Create Dashboard Layout
 
 ### app/(dashboard)/layout.tsx
 ```typescript
@@ -459,7 +437,7 @@ export async function POST() {
 }
 ```
 
-## Step 8: Update Home Page
+## Step 9: Update Home Page
 
 ### app/page.tsx
 ```typescript
@@ -484,12 +462,21 @@ export default function Home() {
 }
 ```
 
-## Step 9: Final Setup Instructions
+## Step 10: Git Init & First Commit
+
+```bash
+cd $ARGUMENTS.project_name
+git init
+git add -A
+git commit -m "Initial MVP scaffold: Next.js 16 + Supabase + shadcn/ui + Tailwind v4"
+```
+
+## Step 11: Final Setup Instructions
 
 After scaffold completes, display:
 
 ```
-✓ Project scaffolded successfully!
+Project scaffolded successfully!
 
 Next steps:
 
@@ -506,22 +493,39 @@ Next steps:
    - Go to Authentication > Providers
    - Enable Email provider (or others as needed)
 
-4. Start development:
+4. Link to Vercel (for AI Gateway + env management):
+   vercel link
+   vercel env pull
+
+5. Start development:
    npm run dev
 
-5. When ready to deploy:
+6. When ready to deploy:
    /mvp-ship
 
 Useful commands:
-- /mvp-db          Generate Supabase migrations
+- /mvp-db          Manage Supabase database & migrations
 - /mvp-ship        Deploy to Vercel
-- /mvp-status      Check project status
+- /mvp-status      Check project health
+
+Stack included:
+- Next.js 16 (App Router, proxy.ts, Turbopack)
+- Supabase (Auth + DB + Storage)
+- Tailwind v4 (light-mode safe)
+- shadcn/ui (Button, Input, Card, Table, Dialog, Sheet, etc.)
+- Tremor (charts & analytics)
+- Motion (animations)
+- Phosphor Icons (9000+ icons)
 ```
 
 ## Important Notes
 
 - All files use TypeScript strict mode
-- Tailwind is configured with the default theme
+- Tailwind v4 is configured with light-mode fix for macOS dark mode
+- Uses `proxy.ts` (Next.js 16) not `middleware.ts`
+- All request APIs are async: `await cookies()`, `await headers()`, etc.
+- shadcn/ui provides the component library — never build raw HTML controls
 - Supabase SSR is set up for both client and server components
-- Middleware handles auth session refresh
+- Proxy handles auth session refresh via getUser() (not getSession())
 - Protected routes redirect to login
+- `@supabase/auth-helpers-nextjs` is deprecated — we use `@supabase/ssr`

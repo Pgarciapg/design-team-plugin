@@ -15,23 +15,39 @@ Deploy the MVP to Vercel with proper configuration.
 ## Pre-flight Checks
 
 ### 1. Verify Project Structure
-- Confirm this is a Next.js project (check for next.config.js/mjs)
+- Confirm this is a Next.js project (check for next.config.ts/mjs)
 - Check for package.json
 - Verify .env.local exists with Supabase credentials
 
-### 2. Check for Issues
-Run these checks:
+### 2. Import Verification (CRITICAL)
+Before deploying, check that all imported files are tracked by git:
+```bash
+git status
+```
+- Look for untracked files in `src/` that might be imported by committed code
+- Uncommitted imports cause silent production crashes — the build passes locally because the file exists, but fails on Vercel where only committed files are deployed
+- Run `git show HEAD:<file>` for any suspicious imports to confirm tracking
+
+### 3. CSS Import Order
+Check `src/app/globals.css`:
+- `@import url(...)` statements MUST come before `@tailwind` directives
+- Wrong order causes silent styling failures in production
+
+### 4. Build Check
 ```bash
 npm run build
 ```
+If build fails:
+- Delete `.next/dev/lock` if present (leftover from crash)
+- Fix TypeScript errors
+- Check for missing environment variables
 
-If build fails, stop and help fix errors before deploying.
-
-### 3. Check Git Status
+### 5. Check Git Status
 ```bash
 git status
 ```
 - If uncommitted changes exist, ask user if they want to commit first
+- Always `git pull` before committing when remote exists
 - Suggest meaningful commit message based on changes
 
 ## Deployment Steps
@@ -46,6 +62,9 @@ which vercel || npm install -g vercel
 ```bash
 vercel link
 ```
+
+**Gotcha**: If the directory name has spaces, use `vercel link --project kebab-case-name`.
+
 Guide user through:
 - Select or create Vercel project
 - Confirm settings
@@ -57,14 +76,17 @@ Check if env vars are set on Vercel:
 vercel env ls
 ```
 
-If missing, guide user to add:
+If missing, set them using the pipe pattern (--yes flag does NOT work on `vercel env add`):
 ```bash
-vercel env add NEXT_PUBLIC_SUPABASE_URL
-vercel env add NEXT_PUBLIC_SUPABASE_ANON_KEY
+printf 'your-supabase-url' | vercel env add NEXT_PUBLIC_SUPABASE_URL production
+printf 'your-anon-key' | vercel env add NEXT_PUBLIC_SUPABASE_ANON_KEY production
 ```
 
-For production, also remind about:
-- `NEXT_PUBLIC_SITE_URL` - Set to production domain
+For production, also set:
+- `NEXT_PUBLIC_SITE_URL` — Set to production domain
+
+If project uses AI Gateway:
+- Run `vercel env pull` to get OIDC credentials (auto-provisioned, no manual API keys needed)
 
 ### Step 4: Deploy
 
@@ -78,50 +100,60 @@ For production:
 vercel --prod
 ```
 
-## Post-Deployment Checklist
+## Post-Deployment Verification
 
-After successful deployment, display:
+After successful deployment:
 
 ```
-✓ Deployed successfully!
+Deployed successfully!
 
 Deployment URL: [url from vercel output]
 
-Post-deployment checklist:
-□ Test login/signup flow
-□ Verify Supabase connection works
-□ Check all protected routes redirect properly
-□ Test on mobile viewport
-□ Verify environment variables are working
+MANDATORY: Click through the deployed site to verify:
+[ ] Home page loads correctly
+[ ] Login/signup flow works
+[ ] Dashboard loads after login
+[ ] All protected routes redirect properly
+[ ] Styles render correctly (no dark mode bleed, no broken CSS)
+[ ] Mobile viewport looks correct
+[ ] No console errors in browser DevTools
 
 Supabase configuration:
-□ Add deployment URL to Supabase Auth settings:
+[ ] Add deployment URL to Supabase Auth settings:
   - Go to Authentication > URL Configuration
   - Add Site URL: [production url]
   - Add Redirect URLs: [production url]/**
 
 Domain setup (if needed):
-□ Add custom domain in Vercel dashboard
-□ Update Supabase redirect URLs with custom domain
-□ Update NEXT_PUBLIC_SITE_URL env var
+[ ] Add custom domain in Vercel dashboard
+[ ] Update Supabase redirect URLs with custom domain
+[ ] Update NEXT_PUBLIC_SITE_URL env var
 ```
+
+**IMPORTANT**: Don't just check the build passes — actually test the experience. Navigate the full user flow. Bugs like invisible content, broken auth redirects, and styling issues are only caught by clicking through the UI.
 
 ## Troubleshooting Common Issues
 
-### Build Fails
-- Check for TypeScript errors: `npm run build`
-- Verify all imports are correct
-- Check for missing environment variables
+### Build Fails on Vercel but Passes Locally
+- **Untracked imports**: A file exists locally but isn't committed to git
+- **Missing env vars**: Set them with `vercel env add`
+- **Different Node version**: Check `engines` in package.json
 
 ### Auth Not Working
 - Verify Supabase URL Configuration includes the deployment URL
 - Check redirect URLs in Supabase dashboard
-- Ensure cookies are being set properly (check middleware)
+- Ensure proxy.ts is in the right location (`src/proxy.ts` with --src-dir)
+- Verify cookies are being set properly
 
 ### 500 Errors
-- Check Vercel function logs
+- Check Vercel function logs: `vercel logs [deployment-url]`
 - Verify environment variables are set correctly
 - Check Supabase service is running
+
+### Styles Look Wrong
+- Check CSS import order in globals.css
+- Verify Tailwind v4 light-mode fix is in place
+- Check for `prefers-color-scheme` interference
 
 ## Rollback
 
@@ -137,5 +169,6 @@ Or from dashboard: Vercel Dashboard > Deployments > ... > Rollback
 After first successful deployment:
 1. Set up custom domain (if needed)
 2. Configure Supabase production settings
-3. Set up monitoring/analytics
+3. Enable Vercel Analytics (zero-config: `npm install @vercel/analytics`)
 4. Consider adding error tracking (Sentry)
+5. Set up AI Gateway if AI features are planned (`vercel env pull` for OIDC)
