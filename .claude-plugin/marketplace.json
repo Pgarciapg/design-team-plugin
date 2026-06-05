@@ -58,6 +58,16 @@
       "category": "productivity"
     },
     {
+      "name": "mg-agent",
+      "description": "MediaGarcia agent runbooks for HubSpot Projects: scout, plan, execute workstreams, collect proof, and propose HubSpot updates",
+      "version": "0.1.0",
+      "author": {
+        "name": "Pablo Garcia Pizano"
+      },
+      "source": "./plugins/mg-agent",
+      "category": "productivity"
+    },
+    {
       "name": "codex-tools",
       "description": "OpenAI Codex integration for PR review and implementation plan review from within Claude Code",
       "version": "1.0.0",
@@ -75,6 +85,26 @@
         "name": "Pablo Garcia Pizano"
       },
       "source": "./plugins/mg-utils",
+      "category": "productivity"
+    },
+    {
+      "name": "whiteboard",
+      "description": "Generate a single self-contained HTML whiteboard that visually recaps the current work — Mermaid diagrams + tables + a where-we-are header — and opens it in the browser.",
+      "version": "1.0.0",
+      "author": {
+        "name": "Pablo Garcia Pizano"
+      },
+      "source": "./plugins/whiteboard",
+      "category": "productivity"
+    },
+    {
+      "name": "teach-session",
+      "description": "A rigorous tutor skill that verifies you deeply understand a coding session, PR, or concept — restate-first, drill-the-why, quiz with AskUserQuestion, and a color-coded HTML mastery checklist. Great for onboarding and for understanding agent-written code before you ship it.",
+      "version": "1.0.0",
+      "author": {
+        "name": "Pablo Garcia Pizano"
+      },
+      "source": "./plugins/teach-session",
       "category": "productivity"
     }
   ]

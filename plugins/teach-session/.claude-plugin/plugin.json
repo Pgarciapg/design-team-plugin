@@ -1,0 +1,8 @@
+{
+  "name": "teach-session",
+  "description": "A rigorous tutor skill that verifies you deeply understand a coding session, PR, or concept — restate-first, drill-the-why, quiz with AskUserQuestion, and a color-coded HTML mastery checklist. Great for onboarding and for understanding agent-written code before you ship it.",
+  "version": "1.0.0",
+  "author": {
+    "name": "Pablo Garcia Pizano"
+  }
+}
