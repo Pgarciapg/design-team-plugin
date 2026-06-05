@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<!-- WHITEBOARD — one self-contained file. Fill {{PLACEHOLDERS}}, add/remove diagram blocks to
+     match the subject's depth, write to /tmp/whiteboard-<topic>.html, open it. Mermaid via CDN.
+     COLOR: use classDef inside each diagram to color nodes by role, and mirror it in the legend.
+     Suggested palette — det(deterministic)=green #3fb950, llm=amber #d29922, gate=blue #58a6ff,
+     fail=red #f85149, ext(external)=grey #8b949e. -->
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>{{TITLE}}</title>
+<style>
+  body { margin: 0; background: #0d1117; color: #e6edf3; padding: 32px 24px 64px;
+    font: 15px/1.6 -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
+  .wrap { max-width: 980px; margin: 0 auto; }
+  h1 { font-size: 25px; margin: 0 0 4px; }
+  .sub { color: #8b949e; font-size: 13px; margin-bottom: 18px; }
+  .goal { border-left: 3px solid #58a6ff; padding: 10px 14px; margin: 16px 0 24px;
+    background: rgba(88,166,255,.1); border-radius: 0 6px 6px 0; }
+  .legend { display: flex; flex-wrap: wrap; gap: 14px; margin: 0 0 26px; font-size: 12px; color: #8b949e; }
+  .legend span { display: inline-flex; align-items: center; gap: 6px; }
+  .dot { width: 10px; height: 10px; border-radius: 3px; display: inline-block; }
+  .cols { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 8px; }
+  @media (max-width: 640px) { .cols { grid-template-columns: 1fr; } }
+  .col { background: #161b22; border: 1px solid #30363d; border-radius: 8px; padding: 14px 16px; }
+  .col h3 { margin: 0 0 8px; font-size: 13px; text-transform: uppercase; letter-spacing: .05em; }
+  .done h3 { color: #3fb950; } .next h3 { color: #d29922; }
+  .col ul { margin: 0; padding-left: 18px; } .col li { margin: 3px 0; }
+  h2 { font-size: 17px; margin: 34px 0 6px; }
+  .cap { color: #8b949e; font-size: 13px; margin: 0 0 12px; }
+  .diagram { background: #161b22; border: 1px solid #30363d; border-radius: 8px; padding: 22px;
+    overflow-x: auto; text-align: center; }
+  code { background: #1c2330; padding: 1px 6px; border-radius: 4px; color: #ffa657; font-size: 13px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <h1>{{TITLE}}</h1>
+  <div class="sub">Whiteboard · {{DATE}}</div>
+  <div class="goal"><b>Goal:</b> {{ONE_LINE_GOAL}}</div>
+
+  <!-- Legend: keep only the roles you actually use, matching your classDef colors. -->
+  <div class="legend">
+    <span><i class="dot" style="background:#3fb950"></i>deterministic</span>
+    <span><i class="dot" style="background:#d29922"></i>LLM / agent</span>
+    <span><i class="dot" style="background:#58a6ff"></i>approval gate</span>
+    <span><i class="dot" style="background:#f85149"></i>fail / blocked</span>
+    <span><i class="dot" style="background:#8b949e"></i>external</span>
+  </div>
+
+  <div class="cols">
+    <div class="col done"><h3>✓ Done</h3><ul><li>{{DONE_ITEM}}</li></ul></div>
+    <div class="col next"><h3>○ Next</h3><ul><li>{{NEXT_ITEM}}</li></ul></div>
+  </div>
+
+  <!-- DIAGRAM BLOCK — repeat for each facet worth its own picture. For a rich system, cover the
+       main flow, the quality / error-handling loop, any state machine, and external channels.
+       Use classDef + class to color nodes by role. -->
+  <h2>{{DIAGRAM_TITLE}}</h2>
+  <p class="cap">{{ONE_SENTENCE_WHAT_THIS_SHOWS}}</p>
+  <div class="diagram">
+    <pre class="mermaid">
+{{MERMAID_SOURCE}}
+    </pre>
+  </div>
+
+</div>
+<script type="module">
+  import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs';
+  mermaid.initialize({ startOnLoad: true, theme: 'dark' });
+</script>
+</body>
+</html>

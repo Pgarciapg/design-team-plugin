@@ -38,17 +38,6 @@ Searches Namecheap, Porkbun, GoDaddy, Squarespace Domains, and Cloudflare. Requi
 
 ---
 
-### exec-assistant
-Autonomous executive assistant that scans your projects daily, sends Slack briefs, and runs overnight workers to fix bugs, add tests, and open PRs while you sleep.
-
-**Commands:** `/exec-nightshift`, `/exec-scan`, `/exec-setup`, `/exec-status`
-
-**Skills:** exec-assistant
-
-**Agents:** night-planner, scanner
-
----
-
 ### hackathon
 Run competitive multi-team hackathons with parallel agents building features against each other. Define teams, assign agents, and let them race to build the best feature.
 
@@ -64,6 +53,20 @@ End-to-end MVP builder for client projects using Next.js, Supabase, and Vercel. 
 **Skills:** nextjs-supabase-stack
 
 **Agents:** feature-builder, supabase-expert
+
+---
+
+### whiteboard
+Generate a single self-contained HTML whiteboard that visually recaps the current work — Mermaid diagrams + tables + a where-we-are header — and opens it in the browser.
+
+**Skills:** whiteboard
+
+---
+
+### teach-session
+A rigorous tutor skill that verifies you deeply understand a coding session, PR, or concept — restate-first, drill-the-why, quiz with AskUserQuestion, and a color-coded HTML mastery checklist. Great for onboarding and for understanding agent-written code before you ship it.
+
+**Skills:** teach-session
 
 ---
 
