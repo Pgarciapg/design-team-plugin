@@ -48,26 +48,6 @@
       "category": "development"
     },
     {
-      "name": "exec-assistant",
-      "description": "Autonomous executive assistant that scans your projects daily, sends Slack briefs, and runs overnight workers to fix bugs, add tests, and open PRs while you sleep",
-      "version": "1.0.0",
-      "author": {
-        "name": "Pablo Garcia Pizano"
-      },
-      "source": "./plugins/exec-assistant",
-      "category": "productivity"
-    },
-    {
-      "name": "mg-agent",
-      "description": "MediaGarcia agent runbooks for HubSpot Projects: scout, plan, execute workstreams, collect proof, and propose HubSpot updates",
-      "version": "0.1.0",
-      "author": {
-        "name": "Pablo Garcia Pizano"
-      },
-      "source": "./plugins/mg-agent",
-      "category": "productivity"
-    },
-    {
       "name": "codex-tools",
       "description": "OpenAI Codex integration for PR review and implementation plan review from within Claude Code",
       "version": "1.0.0",
@@ -76,16 +56,6 @@
       },
       "source": "./plugins/codex-tools",
       "category": "development"
-    },
-    {
-      "name": "mg-utils",
-      "description": "Shared Media Garcia utility commands — session reflection, handoff notes, and team conventions",
-      "version": "1.0.0",
-      "author": {
-        "name": "Pablo Garcia Pizano"
-      },
-      "source": "./plugins/mg-utils",
-      "category": "productivity"
     },
     {
       "name": "whiteboard",
